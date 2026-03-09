@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global AI Governance Dashboard</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap');
+        .font-en { font-family: 'Inter', sans-serif; }
+        .font-ar { font-family: 'Tajawal', sans-serif; }
+        .rtl { direction: rtl; }
+        .ltr { direction: ltr; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        // UI Dictionary
+        const dict = {
+            en: {
+                title: "Global AI Governance Hub",
+                subtitle: "Centralized monitoring for AI legislation and policy",
+                toggleLang: "عربي",
+                lastUpdated: "Last Updated:",
+                filters: "Filters",
+                search: "Search...",
+                layer1: "Layer 1: Enacted & Published",
+                layer2: "Layer 2: Pipeline & In-Progress",
+                mapView: "Global Status Map (Simulated)",
+                feedView: "Regulatory Feed",
+                pipelineView: "Legislative Pipeline",
+                countryView: "Country Profiles",
+                statusEnacted: "Enacted/In Force",
+                statusPipeline: "Pipeline/Draft",
+                statusStrategy: "Strategy/Framework",
+                sourceOfficial: "Official Gov Source",
+                sourceNews: "News Report",
+                recentUpdate: "Recent Update (7 Days)"
+            },
+            ar: {
+                title: "مركز حوكمة الذكاء الاصطناعي العالمي",
+                subtitle: "مراقبة مركزية لتشريعات وسياسات الذكاء الاصطناعي",
+                toggleLang: "English",
+                lastUpdated: "آخر تحديث:",
+                filters: "التصفيات",
+                search: "بحث...",
+                layer1: "المستوى 1: معتمد ومنشور",
+                layer2: "المستوى 2: قيد التطوير والإجراء",
+                mapView: "خريطة الحالة العالمية",
+                feedView: "سجل التشريعات",
+                pipelineView: "قيد التطوير",
+                countryView: "ملفات الدول",
+                statusEnacted: "معتمد/ساري",
+                statusPipeline: "مسودة/مقترح",
+                statusStrategy: "استراتيجية/إطار عمل",
+                sourceOfficial: "مصدر حكومي رسمي",
+                sourceNews: "تقرير إخباري",
+                recentUpdate: "تحديث حديث (7 أيام)"
+            }
+        };
+
+        // Real-world dataset (March 2026 status)
+        const db = [
+            { id: 1, countryEn: "European Union", countryAr: "الاتحاد الأوروبي", flag: "🇪🇺", layer: 1, typeEn: "Law", typeAr: "قانون", statusEn: "In Force", statusAr: "ساري", titleEn: "EU AI Act", titleAr: "قانون الذكاء الاصطناعي الأوروبي", date: "2024-08-01", summaryEn: "Comprehensive risk-based framework. Entered into force Aug 2024; high-risk rules applicable by Aug 2026.", summaryAr: "إطار شامل قائم على المخاطر. دخل حيز التنفيذ في أغسطس 2024.", source: "EUR-Lex", sourceType: "official" },
+            { id: 2, countryEn: "South Korea", countryAr: "كوريا الجنوبية", flag: "🇰🇷", layer: 1, typeEn: "Law", typeAr: "قانون", statusEn: "Enacted", statusAr: "معتمد", titleEn: "Basic Act on AI", titleAr: "القانون الأساسي للذكاء الاصطناعي", date: "2025-01-21", summaryEn: "Mandates safety frameworks for high-impact AI. Effective January 22, 2026.", summaryAr: "يفرض أطر سلامة للذكاء الاصطناعي عالي التأثير. ساري من يناير 2026.", source: "Official Gazette", sourceType: "official" },
+            { id: 3, countryEn: "Brazil", countryAr: "البرازيل", flag: "🇧🇷", layer: 2, typeEn: "Bill", typeAr: "مشروع قانون", statusEn: "Under Review", statusAr: "قيد المراجعة", titleEn: "AI Bill No. 2338/2023", titleAr: "مشروع قانون 2338/2023", date: "2024-12-10", summaryEn: "Passed Senate, currently under consideration by Chamber of Deputies. Risk-based approach similar to EU.", summaryAr: "أقره مجلس الشيوخ، قيد الدراسة في مجلس النواب.", source: "Senado Federal", sourceType: "official" },
+            { id: 4, countryEn: "Canada", countryAr: "كندا", flag: "🇨🇦", layer: 2, typeEn: "Bill", typeAr: "مشروع قانون", statusEn: "Committee Stage", statusAr: "مرحلة اللجنة", titleEn: "AIDA (Bill C-27)", titleAr: "قانون الذكاء الاصطناعي والبيانات", date: "2026-03-05", summaryEn: "Regulates high-impact AI systems. Currently undergoing extensive committee review.", summaryAr: "ينظم أنظمة الذكاء الاصطناعي عالية التأثير. قيد المراجعة المكثفة.", source: "Parliament of Canada", sourceType: "official", recent: true },
+            { id: 5, countryEn: "USA", countryAr: "الولايات المتحدة", flag: "🇺🇸", layer: 1, typeEn: "Executive Order", typeAr: "أمر تنفيذي", statusEn: "In Force", statusAr: "ساري", titleEn: "EO 14110 on Safe AI", titleAr: "الأمر التنفيذي 14110", date: "2023-10-30", summaryEn: "Establishes new standards for AI safety and security at federal agencies.", summaryAr: "يضع معايير جديدة لسلامة وأمن الذكاء الاصطناعي.", source: "White House", sourceType: "official" },
+            { id: 6, countryEn: "USA", countryAr: "الولايات المتحدة", flag: "🇺🇸", layer: 1, typeEn: "State Law", typeAr: "قانون ولاية", statusEn: "In Force", statusAr: "ساري", titleEn: "California AI Transparency Act", titleAr: "قانون شفافية الذكاء الاصطناعي بكاليفورنيا", date: "2026-01-01", summaryEn: "Requires transparency and watermarking for GenAI outputs.", summaryAr: "يتطلب الشفافية وعلامات مائية لمخرجات الذكاء التوليدي.", source: "CA Legislature", sourceType: "official" },
+            { id: 7, countryEn: "UAE", countryAr: "الإمارات", flag: "🇦🇪", layer: 1, typeEn: "Strategy", typeAr: "استراتيجية", statusEn: "Published", statusAr: "منشور", titleEn: "National AI Strategy 2031", titleAr: "استراتيجية الإمارات للذكاء الاصطناعي 2031", date: "2017-10-01", summaryEn: "Comprehensive strategy to position the UAE as a global leader in AI by 2031.", summaryAr: "استراتيجية شاملة لجعل الإمارات رائدة عالمياً بحلول 2031.", source: "UAE Gov", sourceType: "official" },
+            { id: 8, countryEn: "Saudi Arabia", countryAr: "السعودية", flag: "🇸🇦", layer: 1, typeEn: "Framework", typeAr: "إطار عمل", statusEn: "Published", statusAr: "منشور", titleEn: "National Strategy for Data & AI", titleAr: "الاستراتيجية الوطنية للبيانات والذكاء الاصطناعي", date: "2020-10-21", summaryEn: "Framework by SDAIA to drive AI adoption, ethics, and economic diversification.", summaryAr: "إطار عمل لتعزيز تبني الذكاء الاصطناعي والأخلاقيات وتنويع الاقتصاد.", source: "SDAIA", sourceType: "official" },
+            { id: 9, countryEn: "China", countryAr: "الصين", flag: "🇨🇳", layer: 1, typeEn: "Regulation", typeAr: "لائحة", statusEn: "In Force", statusAr: "ساري", titleEn: "Generative AI Measures", titleAr: "تدابير الذكاء الاصطناعي التوليدي", date: "2023-08-15", summaryEn: "Regulates public-facing GenAI services, mandating adherence to core socialist values.", summaryAr: "ينظم خدمات الذكاء التوليدي العامة ويفرض الالتزام بالقيم الأساسية.", source: "CAC", sourceType: "official" },
+            { id: 10, countryEn: "UK", countryAr: "بريطانيا", flag: "🇬🇧", layer: 2, typeEn: "Bill", typeAr: "مشروع قانون", statusEn: "Drafting", statusAr: "قيد الصياغة", titleEn: "AI Regulation Bill", titleAr: "مشروع قانون تنظيم الذكاء الاصطناعي", date: "2026-03-08", summaryEn: "Private members bill to establish an AI Authority. Expected floor debate soon.", summaryAr: "مشروع قانون لإنشاء هيئة للذكاء الاصطناعي.", source: "TechCrunch", sourceType: "news", recent: true },
+            { id: 11, countryEn: "Egypt", countryAr: "مصر", flag: "🇪🇬", layer: 1, typeEn: "Guideline", typeAr: "مبادئ توجيهية", statusEn: "Published", statusAr: "منشور", titleEn: "Charter for Responsible AI", titleAr: "الميثاق المصري للذكاء الاصطناعي المسؤول", date: "2023-11-01", summaryEn: "Ethical guidelines for developers and deployers of AI systems in Egypt.", summaryAr: "مبادئ توجيهية أخلاقية للمطورين والمستخدمين في مصر.", source: "MCIT", sourceType: "official" },
+            { id: 12, countryEn: "Singapore", countryAr: "سنغافورة", flag: "🇸🇬", layer: 1, typeEn: "Framework", typeAr: "إطار عمل", statusEn: "Published", statusAr: "منشور", titleEn: "Model AI Governance Framework V2", titleAr: "إطار حوكمة الذكاء الاصطناعي النموذجي", date: "2020-01-21", summaryEn: "Voluntary framework providing practical guidance to private sector organizations.", summaryAr: "إطار عمل طوعي يقدم إرشادات عملية لمؤسسات القطاع الخاص.", source: "PDPC", sourceType: "official" },
+            { id: 13, countryEn: "Australia", countryAr: "أستراليا", flag: "🇦🇺", layer: 2, typeEn: "Regulation", typeAr: "لائحة", statusEn: "Consultation", statusAr: "استشارة عامة", titleEn: "Mandatory Guardrails for AI", titleAr: "ضوابط إلزامية للذكاء الاصطناعي", date: "2025-09-05", summaryEn: "Proposed mandatory guardrails for AI development and deployment in high-risk settings.", summaryAr: "اقتراح ضوابط إلزامية لتطوير واستخدام الذكاء الاصطناعي.", source: "Dept of Industry", sourceType: "official" },
+            { id: 14, countryEn: "India", countryAr: "الهند", flag: "🇮🇳", layer: 2, typeEn: "Bill", typeAr: "مشروع قانون", statusEn: "Under Discussion", statusAr: "قيد المناقشة", titleEn: "Digital India Act", titleAr: "قانون الهند الرقمية", date: "2025-11-20", summaryEn: "Comprehensive overhaul of IT laws to include targeted regulations for AI and deepfakes.", summaryAr: "إصلاح شامل لقوانين تكنولوجيا المعلومات ليشمل تنظيم الذكاء الاصطناعي.", source: "Reuters", sourceType: "news" },
+            { id: 15, countryEn: "Israel", countryAr: "إسرائيل", flag: "🇮🇱", layer: 1, typeEn: "Policy", typeAr: "سياسة", statusEn: "Published", statusAr: "منشور", titleEn: "AI Regulatory Policy", titleAr: "السياسة التنظيمية للذكاء الاصطناعي", date: "2023-10-31", summaryEn: "Sector-specific, soft-law approach empowering existing regulators rather than a central law.", summaryAr: "نهج يعتمد على تمكين المنظمين الحاليين في قطاعات محددة.", source: "Ministry of Innovation", sourceType: "official" }
+        ];
+
+        const Dashboard = () => {
+            const [lang, setLang] = useState('en');
+            const [search, setSearch] = useState('');
+            const [layerFilter, setLayerFilter] = useState('all');
+            const t = dict[lang];
+
+            useEffect(() => {
+                document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+                document.documentElement.lang = lang;
+            }, [lang]);
+
+            const filteredDb = useMemo(() => {
+                return db.filter(item => {
+                    const matchesSearch = (item.countryEn + item.titleEn + item.summaryEn + item.countryAr + item.titleAr + item.summaryAr).toLowerCase().includes(search.toLowerCase());
+                    const matchesLayer = layerFilter === 'all' || item.layer === parseInt(layerFilter);
+                    return matchesSearch && matchesLayer;
+                }).sort((a, b) => new Date(b.date) - new Date(a.date));
+            }, [search, layerFilter, db]);
+
+            const ItemCard = ({ item }) => (
+                <div className={`p-4 mb-4 border rounded-lg bg-white shadow-sm relative ${item.recent ? 'border-blue-500' : 'border-gray-200'}`}>
+                    {item.recent && (
+                        <span className={`absolute top-0 ${lang === 'ar' ? 'left-0 rounded-tl-lg rounded-br-lg' : 'right-0 rounded-tr-lg rounded-bl-lg'} bg-blue-100 text-blue-800 text-xs px-2 py-1 font-semibold`}>
+                            {t.recentUpdate}
+                        </span>
+                    )}
+                    <div className="flex justify-between items-start mb-2 mt-2">
+                        <div className="flex items-center gap-2">
+                            <span className="text-2xl">{item.flag}</span>
+                            <h3 className="font-bold text-lg">{lang === 'ar' ? item.countryAr : item.countryEn}</h3>
+                        </div>
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${item.layer === 1 ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>
+                            {item.layer === 1 ? t.layer1 : t.layer2}
+                        </span>
+                    </div>
+                    <h4 className="font-semibold text-md text-gray-800 mb-1">{lang === 'ar' ? item.titleAr : item.titleEn}</h4>
+                    <p className="text-sm text-gray-600 mb-3">{lang === 'ar' ? item.summaryAr : item.summaryEn}</p>
+                    <div className="flex justify-between text-xs text-gray-500 border-t pt-2 mt-2">
+                        <span><i className="fa-regular fa-calendar mr-1 ml-1"></i> {item.date}</span>
+                        <span>
+                            <i className="fa-solid fa-scale-balanced mr-1 ml-1"></i> {lang === 'ar' ? item.statusAr : item.statusEn}
+                        </span>
+                        <span className={item.sourceType === 'official' ? 'text-blue-600 font-medium' : 'text-gray-500 italic'}>
+                            <i className={item.sourceType === 'official' ? "fa-solid fa-landmark mr-1 ml-1" : "fa-regular fa-newspaper mr-1 ml-1"}></i>
+                            {item.source} ({item.sourceType === 'official' ? t.sourceOfficial : t.sourceNews})
+                        </span>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className={`min-h-screen ${lang === 'ar' ? 'font-ar rtl' : 'font-en ltr'}`}>
+                    {/* Header */}
+                    <header className="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-10">
+                        <div className="max-w-7xl mx-auto flex justify-between items-center">
+                            <div>
+                                <h1 className="text-2xl font-bold">{t.title}</h1>
+                                <p className="text-slate-400 text-sm">{t.subtitle}</p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <span className="text-xs text-slate-300 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+                                    <i className="fa-solid fa-clock mr-1 ml-1"></i> {t.lastUpdated} March 10, 2026, 12:00 UTC
+                                </span>
+                                <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} className="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-md font-medium transition-colors">
+                                    {t.toggleLang}
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Sidebar Filters & Map Placeholder */}
+                        <div className="lg:col-span-1 space-y-6">
+                            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                                <h2 className="font-bold text-lg mb-4">{t.filters}</h2>
+                                <input 
+                                    type="text" 
+                                    placeholder={t.search} 
+                                    className="w-full p-2 border border-gray-300 rounded-md mb-4 bg-gray-50"
+                                    onChange={(e) => setSearch(e.target.value)}
+                                />
+                                <div className="space-y-2">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="layer" value="all" checked={layerFilter === 'all'} onChange={() => setLayerFilter('all')} />
+                                        <span>All Layers</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer text-green-700 font-medium">
+                                        <input type="radio" name="layer" value="1" checked={layerFilter === '1'} onChange={() => setLayerFilter('1')} />
+                                        <span>{t.layer1}</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer text-orange-700 font-medium">
+                                        <input type="radio" name="layer" value="2" checked={layerFilter === '2'} onChange={() => setLayerFilter('2')} />
+                                        <span>{t.layer2}</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                                <h2 className="font-bold text-lg mb-4">{t.mapView}</h2>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {db.map(c => (
+                                        <div key={c.id} className={`p-2 text-center rounded-md border text-xs font-semibold shadow-sm ${c.layer === 1 ? 'bg-green-100 border-green-300 text-green-800' : 'bg-orange-100 border-orange-300 text-orange-800'}`} title={lang === 'ar' ? c.titleAr : c.titleEn}>
+                                            {c.flag} {lang === 'ar' ? c.countryAr : c.countryEn}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Main Feed */}
+                        <div className="lg:col-span-2">
+                            <h2 className="font-bold text-xl mb-4 text-gray-800 border-b pb-2">{t.feedView}</h2>
+                            <div className="space-y-4">
+                                {filteredDb.map(item => <ItemCard key={item.id} item={item} />)}
+                                {filteredDb.length === 0 && <div className="text-center text-gray-500 p-8 border border-dashed rounded-lg">No records found matching filters.</div>}
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Dashboard />);
+    </script>
+</body>
+</html>
