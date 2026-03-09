@@ -1,0 +1,9 @@
+// Replace the hardcoded 'const db = [...]' with this inside your React component:
+const [db, setDb] = useState([]);
+
+useEffect(() => {
+    fetch('./data.json')
+        .then(response => response.json())
+        .then(data => setDb(data))
+        .catch(error => console.error("Error loading live data:", error));
+}, []);
