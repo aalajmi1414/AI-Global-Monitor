@@ -1,0 +1,35 @@
+name: 12-Hour AI Data Ingestion
+
+# This sets the timer
+on:
+  schedule:
+    # Runs at 00:00 and 12:00 UTC every day
+    - cron: '0 0,12 * * *'
+  # Allows you to click a button to run it manually
+  workflow_dispatch: 
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run ingestion script
+        run: python update_data.py
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "AI-Data-Bot"
+          git config --global user.email "bot@yourdashboard.com"
+          git add data.json
+          git commit -m "Auto-update AI legislation data" || exit 0
+          git push
