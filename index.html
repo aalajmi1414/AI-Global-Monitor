@@ -1,0 +1,58 @@
+import json
+import datetime
+import requests # You will need to pip install requests
+
+# 1. Function to fetch mock/real data (Example: Polling an API)
+def fetch_latest_ai_legislation():
+    # In a production environment, you would hit real endpoints here:
+    # e.g., requests.get("https://api.oecd.ai/policy-observatory")
+    
+    # For demonstration, we are generating an automated entry
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d")
+    
+    new_data = [
+        {
+            "id": 101,
+            "countryEn": "Automated Entry",
+            "countryAr": "إدخال آلي",
+            "flag": "🤖",
+            "layer": 2,
+            "typeEn": "Draft",
+            "typeAr": "مسودة",
+            "statusEn": "Scraped",
+            "statusAr": "تم سحبه",
+            "titleEn": "Automated Ingestion Test",
+            "titleAr": "اختبار السحب الآلي",
+            "date": current_time,
+            "summaryEn": "This entry was automatically fetched by the Python pipeline.",
+            "summaryAr": "تم جلب هذا الإدخال تلقائيًا بواسطة مسار بايثون.",
+            "source": "Python Pipeline",
+            "sourceType": "news",
+            "recent": True
+        }
+    ]
+    return new_data
+
+# 2. Main execution: Load existing data, append new, save.
+def main():
+    try:
+        # Load existing database
+        with open('data.json', 'r', encoding='utf-8') as f:
+            db = json.load(f)
+    except FileNotFoundError:
+        db = []
+
+    # Fetch new data
+    fresh_entries = fetch_latest_ai_legislation()
+    
+    # Combine (In reality, you'd add deduplication logic here)
+    db = fresh_entries + db 
+    
+    # Save back to data.json
+    with open('data.json', 'w', encoding='utf-8') as f:
+        json.dump(db, f, ensure_ascii=False, indent=4)
+        
+    print(f"Successfully updated database at {datetime.datetime.now()}")
+
+if __name__ == "__main__":
+    main()
